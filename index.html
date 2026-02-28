@@ -13,11 +13,11 @@ body{
 
 /* アップデート通知 */
 .update-badge {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #fff3e0;
+    color: #e65100;
     padding: 10px 15px;
     border-radius: 5px;
-    border-left: 5px solid #4caf50;
+    border-left: 5px solid #ff9800;
     margin-bottom: 20px;
     font-size: 14px;
 }
@@ -49,7 +49,7 @@ button{
 }
 
 #factory{
-    display:none; /* 初期は非表示 */
+    display:none;
     margin-top:40px;
 }
 
@@ -79,6 +79,7 @@ button{
     width:80px;
     height:36px;
     background:#888;
+    z-index: 1; /* ブロックより下に */
 }
 
 .block{
@@ -92,7 +93,8 @@ button{
     align-items:center;
     justify-content:center;
     border-radius:4px;
-    transition:all 1.5s ease;
+    z-index: 2; /* ブロックを上に */
+    transition: all 1.5s ease;
 }
 
 #mergeArea{
@@ -109,8 +111,8 @@ button{
 
 <h2>CRT 計算機</h2>
 
-<div class="update-badge">
-    <strong>FIXED:</strong> 2回目以降もベルトコンベヤーが必ず表示されるよう、初期化処理を修正しました。
+<div id="systemLog" class="update-badge">
+    <strong>PATCH 1.0.3:</strong> 瞬間移動バグを修正。再起動後もマテリアルがコンベヤーを滑らかに流れるように慣性制御を調整しました。
 </div>
 
 <div id="rules">
@@ -150,9 +152,9 @@ const errorBox = document.getElementById("errorBox");
 const rules = document.getElementById("rules");
 const beltArea = document.getElementById("beltArea");
 
-/* ===== ベルト生成関数（確実に描画するためにラップ） ===== */
+/* ベルト生成 */
 function createBelts() {
-    beltArea.innerHTML = ""; // 一旦クリア
+    beltArea.innerHTML = "";
     mods.forEach((m,i)=>{
         const row = document.createElement("div");
         row.className = "row";
@@ -160,17 +162,15 @@ function createBelts() {
             <div class="label">${m}</div>
             <div class="belt">
                 <div class="factoryBox"></div>
-                <div class="block" id="block${i}">?</div>
+                <div class="block" id="block${i}" style="left: 0px; top: 5px; transition: none;">?</div>
             </div>
         `;
         beltArea.appendChild(row);
     });
 }
 
-// 初回実行
 createBelts();
 
-/* 逆元 */
 function inv(a, m){
     let m0 = m, x0 = 0, x1 = 1;
     if(m === 1) return 0;
@@ -179,24 +179,13 @@ function inv(a, m){
         [a,m] = [m, a % m];
         [x0,x1] = [x1 - q*x0, x0];
     }
-    if(x1 < 0) x1 += m0;
-    return x1;
-}
-
-/* ===== リセット関数（ここが最重要） ===== */
-function resetFactory(){
-    // 前回の結果をクリア
-    mergeArea.innerHTML = "";
-    resultBox.innerText = "";
-    // ベルトとブロックをスタート位置に作り直す
-    createBelts();
+    return x1 < 0 ? x1 + m0 : x1;
 }
 
 form.addEventListener("submit", function(e){
     e.preventDefault();
     errorBox.innerText = "";
     
-    // 入力値のチェック
     const values = [];
     for(let i=0; i<mods.length; i++){
         const v = Number(form.querySelector(`[name=r${i}]`).value);
@@ -205,13 +194,16 @@ form.addEventListener("submit", function(e){
         values.push(v);
     }
 
-    // 工場の準備
-    resetFactory();
+    // 1. まず工場を作り直す
+    createBelts();
+    mergeArea.innerHTML = "";
+    resultBox.innerText = "";
+    
     form.style.display = "none";
     rules.style.display = "none";
-    factory.style.display = "block"; // ここで工場を表示
+    factory.style.display = "block";
 
-    // 計算ロジック
+    // 計算
     let total = 0;
     const parts = [];
     for(let i=0; i<mods.length; i++){
@@ -222,29 +214,27 @@ form.addEventListener("submit", function(e){
         total += part;
     }
 
-    /* ===== アニメーション開始（元の長さを維持） ===== */
+    /* ===== アニメーション開始 ===== */
     parts.forEach((val, i) => {
         const block = document.getElementById("block" + i);
         block.innerText = values[i];
 
-        // 1: 工場の中へ移動
+        // 瞬間移動を防ぐための重要処理: 
+        // 一瞬だけ時間を置いてからtransitionをオンにして移動を開始させる
         setTimeout(() => {
-            block.style.transition = "left 2s";
+            block.style.transition = "left 2s ease-in-out";
             block.style.left = "130px";
-        }, 300);
+        }, 100); // 0.1秒待つだけでテレポートが治ります
 
-        // 2: 数値変化
         setTimeout(() => {
             block.innerText = val;
         }, 2500);
 
-        // 3: ベルトの端へ
         setTimeout(() => {
-            block.style.transition = "left 3s";
+            block.style.transition = "left 3s ease-in-out";
             block.style.left = "calc(100% - 70px)";
         }, 3000);
 
-        // 4: マージエリアへ落下
         setTimeout(() => {
             const rect = block.getBoundingClientRect();
             const mRect = mergeArea.getBoundingClientRect();
@@ -255,23 +245,21 @@ form.addEventListener("submit", function(e){
             block.style.transition = "none";
             block.style.left = dx + "px";
             block.style.top = dy + "px";
-            block.offsetHeight; // 描画更新
+            block.offsetHeight; // リフロー強制
 
-            block.style.transition = "top 1.5s";
+            block.style.transition = "top 1.5s cubic-bezier(0.47, 0, 0.745, 0.715)";
             block.style.top = "40px";
         }, 6500);
     });
 
-    // 5: 合流
     setTimeout(() => {
         const blocks = mergeArea.querySelectorAll(".block");
         blocks.forEach((b, i) => {
-            b.style.transition = "left 1.5s";
+            b.style.transition = "left 1.5s ease";
             b.style.left = (i * 70) + "px";
         });
     }, 9000);
 
-    // 6: 合計と引き算
     setTimeout(() => {
         mergeArea.innerHTML = "";
         const sum = document.createElement("div");
@@ -281,6 +269,7 @@ form.addEventListener("submit", function(e){
         sum.style.transform = "translateX(-50%)";
         sum.style.width = "auto";
         sum.style.padding = "0 10px";
+        sum.style.transition = "none";
         sum.innerText = total;
         mergeArea.appendChild(sum);
 
@@ -294,7 +283,6 @@ form.addEventListener("submit", function(e){
                 setTimeout(subtract, 600);
             } else {
                 resultBox.innerText = "最終結果: " + current;
-                // 終了後、フォームに戻す
                 setTimeout(() => {
                     form.style.display = "block";
                     rules.style.display = "block";
