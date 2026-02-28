@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CRT Factory Game</title>
+
+<style>
+body{
+    font-family:Arial;
+    background:#f4f4f4;
+    padding:40px;
+}
+
+input{
+    width:60px;
+    padding:4px;
+    margin:4px;
+}
+
+button{
+    padding:8px 16px;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+.error{
+    color:red;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+#rules{
+    background:white;
+    padding:15px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    margin-bottom:20px;
+}
+
+#factory{
+    display:none;
+    margin-top:40px;
+}
+
+.row{
+    display:flex;
+    align-items:center;
+    margin:16px 0;
+}
+
+.label{
+    width:50px;
+    font-weight:bold;
+}
+
+.belt{
+    position:relative;
+    flex:1;
+    height:36px;
+    background:#ddd;
+    border-radius:18px;
+    overflow:hidden;
+}
+
+.factoryBox{
+    position:absolute;
+    left:130px;
+    width:80px;
+    height:36px;
+    background:#888;
+}
+
+.block{
+    position:absolute;
+    width:60px;
+    height:26px;
+    background:#2a5298;
+    color:white;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:4px;
+    transition:all 1.5s ease;
+}
+
+#mergeArea{
+    margin-top:80px;
+    height:120px;
+    background:#bbb;
+    border-radius:30px;
+    position:relative;
+}
+</style>
+</head>
+
+<body>
+
+<h2>CRT 計算機</h2>
+
+<div id="rules">
+<b>ゲームルール</b><br>
+・余りを入力してください<br>
+・余りは 0以上、割る数未満です<br>
+・最大数は <b>30030</b> です<br>
+・結果は 0〜30030 の間になります
+</div>
+
+<form id="form">
+2での余り：<input type="number" name="r0" required><br>
+3での余り：<input type="number" name="r1" required><br>
+5での余り：<input type="number" name="r2" required><br>
+7での余り：<input type="number" name="r3" required><br>
+11での余り：<input type="number" name="r4" required><br>
+13での余り：<input type="number" name="r5" required><br>
+
+<button type="submit">計算</button>
+<div id="errorBox" class="error"></div>
+</form>
+
+<div id="factory">
+<h3>計算中...</h3>
+
+<div id="mergeArea"></div>
+</div>
+
+<h3 id="result"></h3>
+
+<script>
+
+const mods = [2,3,5,7,11,13];
+const M = 30030;
+
+const form = document.getElementById("form");
+const factory = document.getElementById("factory");
+const resultBox = document.getElementById("result");
+const mergeArea = document.getElementById("mergeArea");
+const errorBox = document.getElementById("errorBox");
+const rules = document.getElementById("rules");
+
+function inv(a, m){
+    let m0 = m, x0 = 0, x1 = 1;
+    if(m === 1) return 0;
+    while(a > 1){
+        let q = Math.floor(a/m);
+        [a,m] = [m, a % m];
+        [x0,x1] = [x1 - q*x0, x0];
+    }
+    if(x1 < 0) x1 += m0;
+    return x1;
+}
+
+form.addEventListener("submit", function(e){
+
+    e.preventDefault();
+    errorBox.innerText="";
+    mergeArea.innerHTML="";
+    resultBox.innerText="";
+
+    const values = [];
+
+    for(let i=0;i<mods.length;i++){
+        const v = Number(form.querySelector(`[name=r${i}]`).value);
+
+        if(!Number.isInteger(v)){
+            errorBox.innerText="整数を入力してください";
+            return;
+        }
+
+        if(v < 0 || v >= mods[i]){
+            errorBox.innerText=
+            mods[i]+"での余りは0以上"+mods[i]+"未満です";
+            return;
+        }
+
+        values.push(v);
+    }
+
+    form.style.display="none";
+    rules.style.display="none";
+    factory.style.display="block";
+
+    let total = 0;
+
+    for(let i=0;i<mods.length;i++){
+        const Mi = M / mods[i];
+        const yi = inv(Mi % mods[i], mods[i]);
+        total += values[i] * Mi * yi;
+    }
+
+    let current = total;
+
+    const sumBlock = document.createElement("div");
+    sumBlock.className="block";
+    sumBlock.style.left="50%";
+    sumBlock.style.top="40px";
+    sumBlock.style.transform="translateX(-50%)";
+    sumBlock.innerText=current;
+
+    mergeArea.appendChild(sumBlock);
+
+    function subtract(){
+        if(current >= M){
+            current -= M;
+            sumBlock.innerText=current;
+            setTimeout(subtract,400);
+        }else{
+            resultBox.innerText="最終結果: "+current;
+            setTimeout(()=>{
+                form.style.display="block";
+                rules.style.display="block";
+                factory.style.display="none";
+            },2000);
+        }
+    }
+
+    setTimeout(subtract,2000);
+
+});
+</script>
+
+</body>
+</html>
