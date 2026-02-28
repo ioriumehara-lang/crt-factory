@@ -168,7 +168,7 @@ function inv(a, m){
     return x1;
 }
 
-/* ===== ブロック初期化関数 ===== */
+/* ===== ブロック初期化関数（2回目以降のために強化） ===== */
 function resetBlocks(){
     mergeArea.innerHTML="";
     resultBox.innerText="";
@@ -177,6 +177,7 @@ function resetBlocks(){
         const block = document.getElementById("block"+i);
         const belt = document.querySelectorAll(".belt")[i];
 
+        // ここが重要：マージエリアに移動したブロックをベルトに戻す
         belt.appendChild(block);
 
         block.style.transition="none";
@@ -184,6 +185,7 @@ function resetBlocks(){
         block.style.top="5px";
         block.style.opacity="1";
         block.style.transform="none";
+        block.innerText="?"; // 表示もリセット
     });
 }
 
@@ -217,7 +219,7 @@ form.addEventListener("submit", function(e){
         total+=part;
     }
 
-    /* ===== アニメ ===== */
+    /* ===== アニメ開始 ===== */
     parts.forEach((val,i)=>{
         const block=document.getElementById("block"+i);
 
@@ -247,14 +249,14 @@ form.addEventListener("submit", function(e){
             block.style.transition="none";
             block.style.left=dx+"px";
             block.style.top=dy+"px";
-            block.offsetHeight;
+            block.offsetHeight; // リフロー強制
 
             block.style.transition="top 1.5s";
             block.style.top="40px";
         },6500);
     });
 
-    /* 合流 */
+    /* 合流（横並び） */
     setTimeout(()=>{
         const blocks=mergeArea.querySelectorAll(".block");
         blocks.forEach((b,i)=>{
@@ -263,7 +265,7 @@ form.addEventListener("submit", function(e){
         });
     },9000);
 
-    /* 合計 */
+    /* 合計と減算アニメーション */
     setTimeout(()=>{
         mergeArea.innerHTML="";
         const sum=document.createElement("div");
@@ -271,6 +273,8 @@ form.addEventListener("submit", function(e){
         sum.style.left="50%";
         sum.style.top="40px";
         sum.style.transform="translateX(-50%)";
+        sum.style.width="auto"; // 長い桁に対応
+        sum.style.padding="0 10px";
         sum.innerText=total;
         mergeArea.appendChild(sum);
 
@@ -280,6 +284,10 @@ form.addEventListener("submit", function(e){
             if(current>=M){
                 current-=M;
                 sum.innerText=current;
+                // 減算時のちょっとした視覚効果
+                sum.style.background="#d9534f";
+                setTimeout(()=> sum.style.background="#2a5298", 200);
+                
                 setTimeout(subtract,600);
             }else{
                 resultBox.innerText="最終結果: "+current;
