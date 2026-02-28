@@ -119,9 +119,35 @@ button{
 </form>
 
 <div id="factory">
+
 <h3>計算中...</h3>
 
+<div class="row"><div class="label">2</div>
+<div class="belt"><div class="factoryBox"></div>
+<div class="block" id="block0">?</div></div></div>
+
+<div class="row"><div class="label">3</div>
+<div class="belt"><div class="factoryBox"></div>
+<div class="block" id="block1">?</div></div></div>
+
+<div class="row"><div class="label">5</div>
+<div class="belt"><div class="factoryBox"></div>
+<div class="block" id="block2">?</div></div></div>
+
+<div class="row"><div class="label">7</div>
+<div class="belt"><div class="factoryBox"></div>
+<div class="block" id="block3">?</div></div></div>
+
+<div class="row"><div class="label">11</div>
+<div class="belt"><div class="factoryBox"></div>
+<div class="block" id="block4">?</div></div></div>
+
+<div class="row"><div class="label">13</div>
+<div class="belt"><div class="factoryBox"></div>
+<div class="block" id="block5">?</div></div></div>
+
 <div id="mergeArea"></div>
+
 </div>
 
 <h3 id="result"></h3>
@@ -181,42 +207,115 @@ form.addEventListener("submit", function(e){
     factory.style.display="block";
 
     let total = 0;
+    const parts = [];
 
     for(let i=0;i<mods.length;i++){
         const Mi = M / mods[i];
         const yi = inv(Mi % mods[i], mods[i]);
-        total += values[i] * Mi * yi;
+        const part = values[i] * Mi * yi;
+        parts.push(part);
+        total += part;
     }
 
-    let current = total;
+    parts.forEach((val,i)=>{
 
-    const sumBlock = document.createElement("div");
-    sumBlock.className="block";
-    sumBlock.style.left="50%";
-    sumBlock.style.top="40px";
-    sumBlock.style.transform="translateX(-50%)";
-    sumBlock.innerText=current;
+        const block = document.getElementById("block"+i);
 
-    mergeArea.appendChild(sumBlock);
+        block.style.transition="none";
+        block.style.left="0px";
+        block.style.top="5px";
+        block.style.opacity="1";
 
-    function subtract(){
-        if(current >= M){
-            current -= M;
-            sumBlock.innerText=current;
-            setTimeout(subtract,400);
-        }else{
-            resultBox.innerText="最終結果: "+current;
-            setTimeout(()=>{
-                form.style.display="block";
-                rules.style.display="block";
-                factory.style.display="none";
-            },2000);
+        block.innerText = values[i];
+        block.offsetHeight;
+
+        setTimeout(()=>{
+            block.style.transition="left 2.5s ease";
+            block.style.left="130px";
+        },300);
+
+        setTimeout(()=>{
+            block.innerText = val;
+        },3000);
+
+        setTimeout(()=>{
+            block.style.transition="left 4s ease";
+            block.style.left="calc(100% - 70px)";
+        },3500);
+
+        setTimeout(()=>{
+            const rect = block.getBoundingClientRect();
+            const mergeRect = mergeArea.getBoundingClientRect();
+
+            const offsetX = rect.left - mergeRect.left;
+            const offsetY = rect.top - mergeRect.top;
+
+            mergeArea.appendChild(block);
+
+            block.style.transition="none";
+            block.style.left = offsetX+"px";
+            block.style.top = offsetY+"px";
+
+            block.offsetHeight;
+
+            block.style.transition="top 2s ease";
+            block.style.top="40px";
+
+        },8000);
+
+    });
+
+    setTimeout(()=>{
+        const blocks = mergeArea.querySelectorAll(".block");
+        blocks.forEach((b,i)=>{
+            b.style.transition="left 2s ease";
+            b.style.left=(i*70)+"px";
+        });
+    },10500);
+
+    setTimeout(()=>{
+        const blocks = mergeArea.querySelectorAll(".block");
+        blocks.forEach(b=>{
+            b.style.left="50%";
+            b.style.transform="translateX(-50%)";
+            b.style.opacity="0.3";
+        });
+    },12500);
+
+    setTimeout(()=>{
+        mergeArea.innerHTML="";
+        const sumBlock = document.createElement("div");
+        sumBlock.className="block";
+        sumBlock.style.left="50%";
+        sumBlock.style.top="40px";
+        sumBlock.style.transform="translateX(-50%)";
+        sumBlock.innerText=total;
+        mergeArea.appendChild(sumBlock);
+    },15000);
+
+    setTimeout(()=>{
+        const sumBlock = mergeArea.querySelector(".block");
+        let current=total;
+
+        function subtract(){
+            if(current>=M){
+                current-=M;
+                sumBlock.innerText=current;
+                setTimeout(subtract,700);
+            }else{
+                resultBox.innerText="最終結果: "+current;
+                setTimeout(()=>{
+                    form.style.display="block";
+                    rules.style.display="block";
+                    factory.style.display="none";
+                },2000);
+            }
         }
-    }
-
-    setTimeout(subtract,2000);
+        subtract();
+    },17000);
 
 });
+
 </script>
 
 </body>
