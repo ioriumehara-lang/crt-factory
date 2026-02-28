@@ -11,6 +11,18 @@ body{
     padding:40px;
 }
 
+/* --- 追加したアップデートバッジのスタイル --- */
+.update-badge {
+    background: #e1f5fe;
+    color: #01579b;
+    padding: 10px 15px;
+    border-radius: 5px;
+    border-left: 5px solid #0288d1;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: inline-block;
+}
+
 input{
     width:60px;
     padding:4px;
@@ -98,6 +110,10 @@ button{
 
 <h2>CRT 計算機</h2>
 
+<div class="update-badge">
+    <strong>SYSTEM UPDATE:</strong> 2回目以降の連続稼働に対応しました。ベルトコンベヤーのリセット機能が正常に動作します。
+</div>
+
 <div id="rules">
 <b>ゲームルール</b><br>
 ・余りは 0以上、割る数未満<br>
@@ -177,7 +193,7 @@ function resetBlocks(){
         const block = document.getElementById("block"+i);
         const belt = document.querySelectorAll(".belt")[i];
 
-        // ここが重要：マージエリアに移動したブロックをベルトに戻す
+        // 移動したブロックを元のベルトに戻す
         belt.appendChild(block);
 
         block.style.transition="none";
@@ -185,7 +201,7 @@ function resetBlocks(){
         block.style.top="5px";
         block.style.opacity="1";
         block.style.transform="none";
-        block.innerText="?"; // 表示もリセット
+        block.innerText="?"; 
     });
 }
 
@@ -249,14 +265,14 @@ form.addEventListener("submit", function(e){
             block.style.transition="none";
             block.style.left=dx+"px";
             block.style.top=dy+"px";
-            block.offsetHeight; // リフロー強制
+            block.offsetHeight; 
 
             block.style.transition="top 1.5s";
             block.style.top="40px";
         },6500);
     });
 
-    /* 合流（横並び） */
+    /* 合流 */
     setTimeout(()=>{
         const blocks=mergeArea.querySelectorAll(".block");
         blocks.forEach((b,i)=>{
@@ -273,7 +289,7 @@ form.addEventListener("submit", function(e){
         sum.style.left="50%";
         sum.style.top="40px";
         sum.style.transform="translateX(-50%)";
-        sum.style.width="auto"; // 長い桁に対応
+        sum.style.width="auto"; 
         sum.style.padding="0 10px";
         sum.innerText=total;
         mergeArea.appendChild(sum);
@@ -284,7 +300,6 @@ form.addEventListener("submit", function(e){
             if(current>=M){
                 current-=M;
                 sum.innerText=current;
-                // 減算時のちょっとした視覚効果
                 sum.style.background="#d9534f";
                 setTimeout(()=> sum.style.background="#2a5298", 200);
                 
