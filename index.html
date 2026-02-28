@@ -1,0 +1,413 @@
+from flask import Flask, request, jsonify, render_template_string
+
+app = Flask(__name__)
+
+# 使用する法
+mods = [2,3,5,7,11,13]
+
+# 最大値計算
+M = 1
+for m in mods:
+    M *= m
+
+
+# 拡張ユークリッドで逆元
+def mod_inverse(a, m):
+    t, new_t = 0, 1
+    r, new_r = m, a
+
+    while new_r != 0:
+        q = r // new_r
+        t, new_t = new_t, t - q * new_t
+        r, new_r = new_r, r - q * new_r
+
+    if t < 0:
+        t += m
+    return t
+
+
+# CRT計算
+def crt_parts(remainders):
+    parts = []
+    total = 0
+
+    for r, m in zip(remainders, mods):
+        Mi = M // m
+        inv = mod_inverse(Mi % m, m)
+
+        value = r * Mi * inv
+        parts.append(value)
+
+        total += value
+
+    return parts, total, total % M
+
+
+# =========================
+# HTML
+# =========================
+
+HTML = """
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CRT Factory Game</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f4f4f4;
+    padding:40px;
+}
+
+input{
+    width:60px;
+    padding:4px;
+    margin:4px;
+}
+
+button{
+    padding:8px 16px;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+.error{
+    color:red;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+#rules{
+    background:white;
+    padding:15px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    margin-bottom:20px;
+}
+
+#factory{
+    display:none;
+    margin-top:40px;
+}
+
+.row{
+    display:flex;
+    align-items:center;
+    margin:16px 0;
+}
+
+.label{
+    width:50px;
+    font-weight:bold;
+}
+
+.belt{
+    position:relative;
+    flex:1;
+    height:36px;
+    background:#ddd;
+    border-radius:18px;
+    overflow:hidden;
+}
+
+.factoryBox{
+    position:absolute;
+    left:130px;
+    width:80px;
+    height:36px;
+    background:#888;
+}
+
+.block{
+    position:absolute;
+    width:60px;
+    height:26px;
+    background:#2a5298;
+    color:white;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:4px;
+    transition:all 1.5s ease;
+}
+
+#mergeArea{
+    margin-top:80px;
+    height:120px;
+    background:#bbb;
+    border-radius:30px;
+    position:relative;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>CRT 計算機</h2>
+
+<div id="rules">
+<b>ゲームルール</b><br>
+・この装置は中国剰余定理を使います<br>
+・余りを入力してください<br>
+・余りは 0以上、割る数未満です<br>
+・最大数は <b>30030</b> です<br>
+・結果は 0〜30030 の間になります
+</div>
+
+<form id="form">
+
+{% for m in mods %}
+{{m}}での余り：
+<input type="number" name="r{{loop.index0}}" required><br>
+{% endfor %}
+
+<button type="submit">計算</button>
+<div id="errorBox" class="error"></div>
+
+</form>
+
+<div id="factory">
+
+<h3>計算中...</h3>
+
+{% for m in mods %}
+<div class="row">
+<div class="label">{{m}}</div>
+
+<div class="belt">
+<div class="factoryBox"></div>
+<div class="block" id="block{{loop.index0}}">?</div>
+</div>
+
+</div>
+{% endfor %}
+
+<div id="mergeArea"></div>
+
+</div>
+
+<h3 id="result"></h3>
+
+<script>
+
+const mods = [2,3,5,7,11,13];
+
+const form = document.getElementById("form");
+const factory = document.getElementById("factory");
+const resultBox = document.getElementById("result");
+const mergeArea = document.getElementById("mergeArea");
+const errorBox = document.getElementById("errorBox");
+const rules = document.getElementById("rules");
+
+/* Enter暴走防止 */
+form.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+        e.preventDefault();
+    }
+});
+
+form.addEventListener("submit", async function(e){
+
+    e.preventDefault();
+    errorBox.innerText="";
+
+    const values = [];
+
+    /* 入力検証 */
+    for(let i=0;i<mods.length;i++){
+
+        const input = form.querySelector(`[name=r${i}]`);
+        const raw = input.value.trim();
+
+        if(raw === ""){
+            errorBox.innerText = "入力欄 " + (i+1) + " が空です";
+            return;
+        }
+
+        const v = Number(raw);
+
+        if(!Number.isInteger(v)){
+            errorBox.innerText = "入力欄 " + (i+1) + " は整数を入力してください";
+            return;
+        }
+
+        if(v < 0 || v >= mods[i]){
+            errorBox.innerText =
+            mods[i] + "での余りは 0以上 " + mods[i] + "未満です";
+            return;
+        }
+
+        values.push(v);
+    }
+
+    form.style.display="none";
+    rules.style.display="none";
+    factory.style.display="block";
+
+    mergeArea.innerHTML="";
+    resultBox.innerText="";
+
+    const res = await fetch("/calculate",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({values:values})
+    });
+
+    const result = await res.json();
+
+    const parts = result.parts;
+
+    /* ===== アニメーション ===== */
+
+    parts.forEach((val,i)=>{
+
+        const block = document.getElementById("block"+i);
+
+        block.style.transition="none";
+        block.style.left="0px";
+        block.style.top="5px";
+        block.style.opacity="1";
+
+        block.innerText = values[i];
+
+        block.offsetHeight;
+
+        setTimeout(()=>{
+            block.style.transition="left 2.5s ease";
+            block.style.left="130px";
+        },300);
+
+        setTimeout(()=>{
+            block.innerText = val;
+        },3000);
+
+        setTimeout(()=>{
+            block.style.transition="left 4s ease";
+            block.style.left="calc(100% - 70px)";
+        },3500);
+
+        setTimeout(()=>{
+            const rect = block.getBoundingClientRect();
+            const mergeRect = mergeArea.getBoundingClientRect();
+
+            const offsetX = rect.left - mergeRect.left;
+            const offsetY = rect.top - mergeRect.top;
+
+            mergeArea.appendChild(block);
+
+            block.style.transition="none";
+            block.style.left = offsetX+"px";
+            block.style.top = offsetY+"px";
+
+            block.offsetHeight;
+
+            block.style.transition="top 2s ease";
+            block.style.top="40px";
+
+        },8000);
+
+    });
+
+    setTimeout(()=>{
+
+        const blocks = mergeArea.querySelectorAll(".block");
+
+        blocks.forEach((b,i)=>{
+            b.style.transition="left 2s ease";
+            b.style.left=(i*70)+"px";
+        });
+
+    },10500);
+
+    setTimeout(()=>{
+
+        const blocks = mergeArea.querySelectorAll(".block");
+
+        blocks.forEach(b=>{
+            b.style.left="50%";
+            b.style.transform="translateX(-50%)";
+            b.style.opacity="0.3";
+        });
+
+    },12500);
+
+    setTimeout(()=>{
+
+        mergeArea.innerHTML="";
+
+        const sumBlock = document.createElement("div");
+        sumBlock.className="block";
+
+        sumBlock.style.left="50%";
+        sumBlock.style.top="40px";
+        sumBlock.style.transform="translateX(-50%)";
+
+        sumBlock.innerText=result.total;
+
+        mergeArea.appendChild(sumBlock);
+
+    },15000);
+
+    setTimeout(()=>{
+
+        const sumBlock = mergeArea.querySelector(".block");
+
+        let current=result.total;
+
+        function subtract(){
+            if(current>=result.mod){
+                current-=result.mod;
+                sumBlock.innerText=current;
+                setTimeout(subtract,700);
+            }else{
+
+                resultBox.innerText="最終結果: "+current;
+
+                setTimeout(()=>{
+                    form.style.display="block";
+                    rules.style.display="block";
+                    factory.style.display="none";
+                },2000);
+            }
+        }
+
+        subtract();
+
+    },17000);
+
+});
+
+</script>
+
+</body>
+</html>
+"""
+
+
+@app.route("/")
+def home():
+    return render_template_string(HTML, mods=mods)
+
+@app.route("/calculate", methods=["POST"])
+def calculate():
+
+    data = request.get_json()
+    values = data["values"]
+
+    parts,total,answer = crt_parts(values)
+
+    return jsonify({
+        "parts":parts,
+        "total":total,
+        "answer":answer,
+        "mod":M
+    })
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
