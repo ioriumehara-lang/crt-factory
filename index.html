@@ -13,11 +13,11 @@ body{
 
 /* アップデート通知 */
 .update-badge {
-    background: #e1f5fe;
-    color: #01579b;
+    background: #f3e5f5;
+    color: #4a148c;
     padding: 10px 15px;
     border-radius: 5px;
-    border-left: 5px solid #0288d1;
+    border-left: 5px solid #9c27b0;
     margin-bottom: 20px;
     font-size: 14px;
 }
@@ -70,7 +70,6 @@ button{
     height:36px;
     background:#ddd;
     border-radius:18px;
-    /* overflow:hidden; を削除（ワープ演出のため） */
 }
 
 .factoryBox{
@@ -97,7 +96,6 @@ button{
     transition: all 1.5s ease;
 }
 
-/* 下段コンベア（ラインB） */
 #mergeArea{
     margin-top:80px;
     height:60px;
@@ -114,7 +112,7 @@ button{
 <h2>CRT 計算機</h2>
 
 <div id="systemLog" class="update-badge">
-    <strong>PATCH 1.0.4:</strong> 二段式ラインシステムを導入。ラインAの終端からラインBの始端への転送プロトコルを実装しました。
+    <strong>PATCH 1.0.5:</strong> 転送プロトコルの修正。各ブロックがラインAの右端（デリバリーポイント）に到達した瞬間に、ラインBへ即時ワープする設定に変更しました。
 </div>
 
 <div id="rules">
@@ -135,9 +133,9 @@ button{
 </form>
 
 <div id="factory">
-    <h3>ラインA：個別計算中...</h3>
+    <h3>ラインA：個別計算 & 配送</h3>
     <div id="beltArea"></div>
-    <h3>ラインB：統合準備中...</h3>
+    <h3>ラインB：統合待機エリア</h3>
     <div id="mergeArea"></div>
 </div>
 
@@ -219,55 +217,59 @@ form.addEventListener("submit", function(e){
         const block = document.getElementById("block" + i);
         block.innerText = values[i];
 
-        // 1. 工場Aの中へ
+        // 1. 工場Aの入口へ（スライド開始）
         setTimeout(() => {
-            block.style.transition = "left 2s linear";
+            block.style.transition = "left 1.5s linear";
             block.style.left = "130px";
-        }, 100 + (i * 200)); // 少しずつずらして出発
+        }, 100 + (i * 300));
 
-        // 2. 数値変化
+        // 2. 工場通過中に数値が変化
         setTimeout(() => {
             block.innerText = val;
             block.style.background = "#e67e22";
-        }, 2200 + (i * 200));
+        }, 1600 + (i * 300));
 
-        // 3. ラインAの端まで行く
+        // 3. そのままラインAの右端まで完走させる
         setTimeout(() => {
-            block.style.transition = "left 2s linear";
-            block.style.left = "calc(100% + 60px)"; // 画面外へ
+            block.style.transition = "left 2.5s linear";
+            block.style.left = "calc(100% - 65px)"; 
+        }, 3100 + (i * 300));
+
+        // 4. 右端に着いたら下のラインBへテレポート
+        setTimeout(() => {
+            // 右端で一瞬消える
             block.style.opacity = "0";
-        }, 4500 + (i * 200));
+            
+            setTimeout(() => {
+                mergeArea.appendChild(block);
+                block.style.transition = "none";
+                block.style.left = "-70px"; // 下ラインの左端（外）へ
+                block.style.top = "15px";
+                block.style.opacity = "1";
+                block.offsetHeight; // 再描画
 
-        // 4. ラインB（下のコンベア）の左端にテレポートして整列
-        setTimeout(() => {
-            mergeArea.appendChild(block);
-            block.style.transition = "none";
-            block.style.left = "-70px"; // 左の外側から
-            block.style.top = "15px";
-            block.style.opacity = "1";
-            block.offsetHeight; // リフロー
-
-            // ラインBに入って整列位置（順番通り）へ
-            block.style.transition = "left 1.5s ease-out";
-            block.style.left = (i * 70 + 10) + "px";
-        }, 7000 + (i * 200));
+                // ラインBでの指定位置へスライド
+                block.style.transition = "left 1s ease-out";
+                block.style.left = (i * 70 + 10) + "px";
+            }, 100); // 転送の瞬間にわずかな間を置く
+        }, 5600 + (i * 300)); // 3100 + 2500 = 5600 (右端到達タイミング)
     });
 
-    // 5. ラインBの右端で合流
+    // 5. 全員がラインBに揃ったら右端へ合流
     setTimeout(() => {
         const blocks = mergeArea.querySelectorAll(".block");
         blocks.forEach((b) => {
             b.style.transition = "left 2s cubic-bezier(0.55, 0.055, 0.675, 0.19)";
             b.style.left = "calc(100% - 80px)";
         });
-    }, 10000);
+    }, 9500);
 
-    // 6. 合体して最終計算
+    // 6. 合体・最終計算
     setTimeout(() => {
         mergeArea.innerHTML = "";
         const sum = document.createElement("div");
         sum.className = "block";
-        sum.style.left = "80%";
+        sum.style.left = "90%";
         sum.style.top = "15px";
         sum.style.width = "auto";
         sum.style.padding = "0 15px";
@@ -275,7 +277,6 @@ form.addEventListener("submit", function(e){
         sum.innerText = total;
         mergeArea.appendChild(sum);
 
-        // 中央へ移動
         setTimeout(() => {
             sum.style.transition = "left 1s ease";
             sum.style.left = "50%";
@@ -300,7 +301,7 @@ form.addEventListener("submit", function(e){
             }
         }
         setTimeout(subtract, 1500);
-    }, 12500);
+    }, 12000);
 });
 </script>
 
