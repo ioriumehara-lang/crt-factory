@@ -2,140 +2,211 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>CRT Factory Game</title>
+<title>CRT Cyber Factory</title>
 
 <style>
-body{
-    font-family:Arial;
-    background:#f4f4f4;
-    padding:40px;
+:root {
+    --bg-color: #0d1117;
+    --panel-color: #161b22;
+    --accent-blue: #58a6ff;
+    --accent-orange: #f0883e;
+    --accent-green: #3fb950;
+    --accent-red: #f85149;
+    --text-main: #c9d1d9;
+    --belt-color: #30363d;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-main);
+    padding: 40px;
+    margin: 0;
+}
+
+h2 {
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 2px solid var(--accent-blue);
+    display: inline-block;
+    padding-bottom: 10px;
 }
 
 /* アップデート通知 */
 .update-badge {
-    background: #f3e5f5;
-    color: #4a148c;
-    padding: 10px 15px;
-    border-radius: 5px;
-    border-left: 5px solid #9c27b0;
-    margin-bottom: 20px;
+    background: rgba(88, 166, 255, 0.1);
+    color: var(--accent-blue);
+    padding: 12px 20px;
+    border-radius: 6px;
+    border: 1px solid var(--accent-blue);
+    margin-bottom: 30px;
     font-size: 14px;
+    box-shadow: 0 0 15px rgba(88, 166, 255, 0.2);
 }
 
-input{
-    width:60px;
-    padding:4px;
-    margin:4px;
+#rules {
+    background: var(--panel-color);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    margin-bottom: 30px;
 }
 
-button{
-    padding:8px 16px;
-    margin-top:10px;
-    cursor:pointer;
+/* フォーム周り */
+form {
+    background: var(--panel-color);
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    display: inline-block;
 }
 
-.error{
-    color:red;
-    font-weight:bold;
-    margin-top:10px;
+input {
+    background: #0d1117;
+    color: var(--accent-blue);
+    border: 1px solid #484f58;
+    padding: 8px;
+    margin: 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 16px;
+    width: 80px;
 }
 
-#rules{
-    background:white;
-    padding:15px;
-    border-radius:8px;
-    border:1px solid #ccc;
-    margin-bottom:20px;
+input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
 }
 
-#factory{
-    display:none;
-    margin-top:40px;
+button {
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 15px;
 }
 
-.row{
-    display:flex;
-    align-items:center;
-    margin:16px 0;
+button:hover {
+    background: #1f6feb;
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.5);
 }
 
-.label{
-    width:50px;
-    font-weight:bold;
+/* 工場エリア */
+#factory {
+    display: none;
+    margin-top: 50px;
 }
 
-.belt{
-    position:relative;
-    flex:1;
-    height:36px;
-    background:#ddd;
-    border-radius:18px;
+.row {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
 }
 
-.factoryBox{
-    position:absolute;
-    left:130px;
-    width:80px;
-    height:36px;
-    background:#888;
-    z-index: 1;
+.label {
+    width: 80px;
+    font-weight: bold;
+    color: var(--accent-blue);
+    font-family: monospace;
 }
 
-.block{
-    position:absolute;
-    width:60px;
-    height:26px;
-    background:#2a5298;
-    color:white;
-    font-size:12px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:4px;
-    z-index: 2;
+/* ベルトのアニメーション */
+.belt {
+    position: relative;
+    flex: 1;
+    height: 40px;
+    background: var(--belt-color);
+    border-radius: 20px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,0.05) 50%);
+    background-size: 40px 100%;
+    animation: moveBelt 1s linear infinite;
+}
+
+@keyframes moveBelt {
+    from { background-position: 0 0; }
+    to { background-position: 40px 0; }
+}
+
+.factoryBox {
+    position: absolute;
+    left: 130px;
+    width: 90px;
+    height: 100%;
+    background: #21262d;
+    border: 2px solid var(--accent-blue);
+    border-radius: 4px;
+    z-index: 10;
+    box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
+}
+
+.block {
+    position: absolute;
+    width: 70px;
+    height: 30px;
+    background: var(--accent-blue);
+    color: #0d1117;
+    font-size: 14px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    z-index: 5;
     transition: all 1.5s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-#mergeArea{
-    margin-top:80px;
-    height:60px;
-    background:#ccc;
-    border-radius:30px;
-    position:relative;
-    border: 4px solid #bbb;
+/* ラインB（下段） */
+#mergeArea {
+    margin-top: 100px;
+    height: 70px;
+    background: #161b22;
+    border-radius: 35px;
+    position: relative;
+    border: 2px solid #30363d;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
 }
+
+.error { color: var(--accent-red); margin-top: 15px; }
+#result { text-align: center; font-size: 2em; color: var(--accent-green); text-shadow: 0 0 15px rgba(63, 185, 80, 0.4); }
+
 </style>
 </head>
 
 <body>
 
-<h2>CRT 計算機</h2>
+<h2>CRT Quantum Factory</h2>
 
 <div id="systemLog" class="update-badge">
-    <strong>PATCH 1.0.5:</strong> 転送プロトコルの修正。各ブロックがラインAの右端（デリバリーポイント）に到達した瞬間に、ラインBへ即時ワープする設定に変更しました。
+    <strong>PATCH 1.0.6:</strong> UIオーバーホール完了。ダークモード・ネオンインターフェースを実装。ベルトコンベヤーの可動アニメーションを追加しました。
 </div>
 
 <div id="rules">
-<b>ゲームルール</b><br>
-・余りは 0以上、割る数未満<br>
-・最大数は 30030
+    <strong>PROTOCOL:</strong> 余りは 0以上、法（Mod）未満を入力。システム最大限界値：30030
 </div>
 
 <form id="form">
-2での余り：<input type="number" name="r0" required><br>
-3での余り：<input type="number" name="r1" required><br>
-5での余り：<input type="number" name="r2" required><br>
-7での余り：<input type="number" name="r3" required><br>
-11での余り：<input type="number" name="r4" required><br>
-13での余り：<input type="number" name="r5" required><br>
-<button type="submit">計算</button>
-<div id="errorBox" class="error"></div>
+    MOD 02: <input type="number" name="r0" required><br>
+    MOD 03: <input type="number" name="r1" required><br>
+    MOD 05: <input type="number" name="r2" required><br>
+    MOD 07: <input type="number" name="r3" required><br>
+    MOD 11: <input type="number" name="r4" required><br>
+    MOD 13: <input type="number" name="r5" required><br>
+    <button type="submit">EXECUTE CALCULATION</button>
+    <div id="errorBox" class="error"></div>
 </form>
 
 <div id="factory">
-    <h3>ラインA：個別計算 & 配送</h3>
+    <h3 style="color:var(--accent-orange)">LINE-A: ATOMIC PROCESSING</h3>
     <div id="beltArea"></div>
-    <h3>ラインB：統合待機エリア</h3>
+    <h3 style="color:var(--accent-green)">LINE-B: DATA MERGING</h3>
     <div id="mergeArea"></div>
 </div>
 
@@ -150,7 +221,6 @@ const factory = document.getElementById("factory");
 const resultBox = document.getElementById("result");
 const mergeArea = document.getElementById("mergeArea");
 const errorBox = document.getElementById("errorBox");
-const rules = document.getElementById("rules");
 const beltArea = document.getElementById("beltArea");
 
 function createBelts() {
@@ -159,7 +229,7 @@ function createBelts() {
         const row = document.createElement("div");
         row.className = "row";
         row.innerHTML = `
-            <div class="label">${m}</div>
+            <div class="label">M ${m}</div>
             <div class="belt">
                 <div class="factoryBox"></div>
                 <div class="block" id="block${i}" style="left: 0px; top: 5px; transition: none;">?</div>
@@ -189,8 +259,8 @@ form.addEventListener("submit", function(e){
     const values = [];
     for(let i=0; i<mods.length; i++){
         const v = Number(form.querySelector(`[name=r${i}]`).value);
-        if(!Number.isInteger(v)){ errorBox.innerText="整数を入力"; return; }
-        if(v<0 || v>=mods[i]){ errorBox.innerText="範囲外"; return; }
+        if(!Number.isInteger(v)){ errorBox.innerText="ERROR: INT ONLY"; return; }
+        if(v<0 || v>=mods[i]){ errorBox.innerText="ERROR: OUT OF RANGE"; return; }
         values.push(v);
     }
 
@@ -199,7 +269,7 @@ form.addEventListener("submit", function(e){
     resultBox.innerText = "";
     
     form.style.display = "none";
-    rules.style.display = "none";
+    document.getElementById("rules").style.display = "none";
     factory.style.display = "block";
 
     let total = 0;
@@ -212,68 +282,57 @@ form.addEventListener("submit", function(e){
         total += part;
     }
 
-    /* ===== アニメーション開始 ===== */
     parts.forEach((val, i) => {
         const block = document.getElementById("block" + i);
         block.innerText = values[i];
 
-        // 1. 工場Aの入口へ（スライド開始）
         setTimeout(() => {
             block.style.transition = "left 1.5s linear";
-            block.style.left = "130px";
+            block.style.left = "135px";
         }, 100 + (i * 300));
 
-        // 2. 工場通過中に数値が変化
         setTimeout(() => {
             block.innerText = val;
-            block.style.background = "#e67e22";
+            block.style.background = "var(--accent-orange)";
         }, 1600 + (i * 300));
 
-        // 3. そのままラインAの右端まで完走させる
         setTimeout(() => {
             block.style.transition = "left 2.5s linear";
-            block.style.left = "calc(100% - 65px)"; 
+            block.style.left = "calc(100% - 70px)"; 
         }, 3100 + (i * 300));
 
-        // 4. 右端に着いたら下のラインBへテレポート
         setTimeout(() => {
-            // 右端で一瞬消える
             block.style.opacity = "0";
-            
             setTimeout(() => {
                 mergeArea.appendChild(block);
                 block.style.transition = "none";
-                block.style.left = "-70px"; // 下ラインの左端（外）へ
-                block.style.top = "15px";
+                block.style.left = "-80px";
+                block.style.top = "18px";
                 block.style.opacity = "1";
-                block.offsetHeight; // 再描画
-
-                // ラインBでの指定位置へスライド
+                block.offsetHeight;
                 block.style.transition = "left 1s ease-out";
-                block.style.left = (i * 70 + 10) + "px";
-            }, 100); // 転送の瞬間にわずかな間を置く
-        }, 5600 + (i * 300)); // 3100 + 2500 = 5600 (右端到達タイミング)
+                block.style.left = (i * 75 + 15) + "px";
+            }, 100);
+        }, 5600 + (i * 300));
     });
 
-    // 5. 全員がラインBに揃ったら右端へ合流
     setTimeout(() => {
         const blocks = mergeArea.querySelectorAll(".block");
         blocks.forEach((b) => {
-            b.style.transition = "left 2s cubic-bezier(0.55, 0.055, 0.675, 0.19)";
-            b.style.left = "calc(100% - 80px)";
+            b.style.transition = "left 2s cubic-bezier(0.5, 0, 0.5, 1)";
+            b.style.left = "calc(100% - 90px)";
         });
-    }, 9500);
+    }, 10000);
 
-    // 6. 合体・最終計算
     setTimeout(() => {
         mergeArea.innerHTML = "";
         const sum = document.createElement("div");
         sum.className = "block";
         sum.style.left = "90%";
-        sum.style.top = "15px";
+        sum.style.top = "18px";
         sum.style.width = "auto";
-        sum.style.padding = "0 15px";
-        sum.style.background = "#2a5298";
+        sum.style.padding = "0 20px";
+        sum.style.background = "var(--accent-green)";
         sum.innerText = total;
         mergeArea.appendChild(sum);
 
@@ -288,20 +347,20 @@ form.addEventListener("submit", function(e){
             if(current >= M){
                 current -= M;
                 sum.innerText = current;
-                sum.style.background = "#d9534f";
-                setTimeout(() => sum.style.background = "#2a5298", 200);
-                setTimeout(subtract, 500);
+                sum.style.boxShadow = "0 0 25px var(--accent-red)";
+                setTimeout(() => sum.style.boxShadow = "none", 200);
+                setTimeout(subtract, 400);
             } else {
-                resultBox.innerText = "最終結果: " + current;
+                resultBox.innerText = "OUTPUT: " + current;
                 setTimeout(() => {
                     form.style.display = "block";
-                    rules.style.display = "block";
+                    document.getElementById("rules").style.display = "block";
                     factory.style.display = "none";
-                }, 2000);
+                }, 3000);
             }
         }
         setTimeout(subtract, 1500);
-    }, 12000);
+    }, 12500);
 });
 </script>
 
