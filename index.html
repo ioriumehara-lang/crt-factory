@@ -13,11 +13,11 @@ body{
 
 /* アップデート通知 */
 .update-badge {
-    background: #fff3e0;
-    color: #e65100;
+    background: #e1f5fe;
+    color: #01579b;
     padding: 10px 15px;
     border-radius: 5px;
-    border-left: 5px solid #ff9800;
+    border-left: 5px solid #0288d1;
     margin-bottom: 20px;
     font-size: 14px;
 }
@@ -70,7 +70,7 @@ button{
     height:36px;
     background:#ddd;
     border-radius:18px;
-    overflow:hidden;
+    /* overflow:hidden; を削除（ワープ演出のため） */
 }
 
 .factoryBox{
@@ -79,7 +79,7 @@ button{
     width:80px;
     height:36px;
     background:#888;
-    z-index: 1; /* ブロックより下に */
+    z-index: 1;
 }
 
 .block{
@@ -93,16 +93,18 @@ button{
     align-items:center;
     justify-content:center;
     border-radius:4px;
-    z-index: 2; /* ブロックを上に */
+    z-index: 2;
     transition: all 1.5s ease;
 }
 
+/* 下段コンベア（ラインB） */
 #mergeArea{
     margin-top:80px;
-    height:120px;
-    background:#bbb;
+    height:60px;
+    background:#ccc;
     border-radius:30px;
     position:relative;
+    border: 4px solid #bbb;
 }
 </style>
 </head>
@@ -112,7 +114,7 @@ button{
 <h2>CRT 計算機</h2>
 
 <div id="systemLog" class="update-badge">
-    <strong>PATCH 1.0.3:</strong> 瞬間移動バグを修正。再起動後もマテリアルがコンベヤーを滑らかに流れるように慣性制御を調整しました。
+    <strong>PATCH 1.0.4:</strong> 二段式ラインシステムを導入。ラインAの終端からラインBの始端への転送プロトコルを実装しました。
 </div>
 
 <div id="rules">
@@ -133,8 +135,9 @@ button{
 </form>
 
 <div id="factory">
-    <h3>計算ユニット稼働中...</h3>
+    <h3>ラインA：個別計算中...</h3>
     <div id="beltArea"></div>
+    <h3>ラインB：統合準備中...</h3>
     <div id="mergeArea"></div>
 </div>
 
@@ -152,7 +155,6 @@ const errorBox = document.getElementById("errorBox");
 const rules = document.getElementById("rules");
 const beltArea = document.getElementById("beltArea");
 
-/* ベルト生成 */
 function createBelts() {
     beltArea.innerHTML = "";
     mods.forEach((m,i)=>{
@@ -194,7 +196,6 @@ form.addEventListener("submit", function(e){
         values.push(v);
     }
 
-    // 1. まず工場を作り直す
     createBelts();
     mergeArea.innerHTML = "";
     resultBox.innerText = "";
@@ -203,7 +204,6 @@ form.addEventListener("submit", function(e){
     rules.style.display = "none";
     factory.style.display = "block";
 
-    // 計算
     let total = 0;
     const parts = [];
     for(let i=0; i<mods.length; i++){
@@ -219,59 +219,68 @@ form.addEventListener("submit", function(e){
         const block = document.getElementById("block" + i);
         block.innerText = values[i];
 
-        // 瞬間移動を防ぐための重要処理: 
-        // 一瞬だけ時間を置いてからtransitionをオンにして移動を開始させる
+        // 1. 工場Aの中へ
         setTimeout(() => {
-            block.style.transition = "left 2s ease-in-out";
+            block.style.transition = "left 2s linear";
             block.style.left = "130px";
-        }, 100); // 0.1秒待つだけでテレポートが治ります
+        }, 100 + (i * 200)); // 少しずつずらして出発
 
+        // 2. 数値変化
         setTimeout(() => {
             block.innerText = val;
-        }, 2500);
+            block.style.background = "#e67e22";
+        }, 2200 + (i * 200));
 
+        // 3. ラインAの端まで行く
         setTimeout(() => {
-            block.style.transition = "left 3s ease-in-out";
-            block.style.left = "calc(100% - 70px)";
-        }, 3000);
+            block.style.transition = "left 2s linear";
+            block.style.left = "calc(100% + 60px)"; // 画面外へ
+            block.style.opacity = "0";
+        }, 4500 + (i * 200));
 
+        // 4. ラインB（下のコンベア）の左端にテレポートして整列
         setTimeout(() => {
-            const rect = block.getBoundingClientRect();
-            const mRect = mergeArea.getBoundingClientRect();
-            const dx = rect.left - mRect.left;
-            const dy = rect.top - mRect.top;
-
             mergeArea.appendChild(block);
             block.style.transition = "none";
-            block.style.left = dx + "px";
-            block.style.top = dy + "px";
-            block.offsetHeight; // リフロー強制
+            block.style.left = "-70px"; // 左の外側から
+            block.style.top = "15px";
+            block.style.opacity = "1";
+            block.offsetHeight; // リフロー
 
-            block.style.transition = "top 1.5s cubic-bezier(0.47, 0, 0.745, 0.715)";
-            block.style.top = "40px";
-        }, 6500);
+            // ラインBに入って整列位置（順番通り）へ
+            block.style.transition = "left 1.5s ease-out";
+            block.style.left = (i * 70 + 10) + "px";
+        }, 7000 + (i * 200));
     });
 
+    // 5. ラインBの右端で合流
     setTimeout(() => {
         const blocks = mergeArea.querySelectorAll(".block");
-        blocks.forEach((b, i) => {
-            b.style.transition = "left 1.5s ease";
-            b.style.left = (i * 70) + "px";
+        blocks.forEach((b) => {
+            b.style.transition = "left 2s cubic-bezier(0.55, 0.055, 0.675, 0.19)";
+            b.style.left = "calc(100% - 80px)";
         });
-    }, 9000);
+    }, 10000);
 
+    // 6. 合体して最終計算
     setTimeout(() => {
         mergeArea.innerHTML = "";
         const sum = document.createElement("div");
         sum.className = "block";
-        sum.style.left = "50%";
-        sum.style.top = "40px";
-        sum.style.transform = "translateX(-50%)";
+        sum.style.left = "80%";
+        sum.style.top = "15px";
         sum.style.width = "auto";
-        sum.style.padding = "0 10px";
-        sum.style.transition = "none";
+        sum.style.padding = "0 15px";
+        sum.style.background = "#2a5298";
         sum.innerText = total;
         mergeArea.appendChild(sum);
+
+        // 中央へ移動
+        setTimeout(() => {
+            sum.style.transition = "left 1s ease";
+            sum.style.left = "50%";
+            sum.style.transform = "translateX(-50%)";
+        }, 100);
 
         let current = total;
         function subtract(){
@@ -280,7 +289,7 @@ form.addEventListener("submit", function(e){
                 sum.innerText = current;
                 sum.style.background = "#d9534f";
                 setTimeout(() => sum.style.background = "#2a5298", 200);
-                setTimeout(subtract, 600);
+                setTimeout(subtract, 500);
             } else {
                 resultBox.innerText = "最終結果: " + current;
                 setTimeout(() => {
@@ -291,7 +300,7 @@ form.addEventListener("submit", function(e){
             }
         }
         setTimeout(subtract, 1500);
-    }, 11000);
+    }, 12500);
 });
 </script>
 
